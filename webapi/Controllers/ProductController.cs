@@ -91,15 +91,15 @@ namespace webapi.Controllers
 
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+     
         [Route("Factor/Create")]
-        public async Task<long> CreateFactor(Factor factor)
+        public async Task CreateFactor([FromBody]Factor factor)
         {
             var factorresllt=await (webapistoreContext.Factor.FromSqlRaw(
-      " exec dbo.CreateFactor @F_customerID = { 0},@F_ProductID = { 1},@Quantity = { 2},@TotalPrice = { 3} ,"
-        + factor.FCustomer + "," + factor.FProductId +","+factor.Quantity+","+factor.TotalPrice
+      " exec dbo.CreateFactor @F_customerID = {0},@F_ProductID = {1},@Quantity = {2},@TotalPrice = {3} ,"
+        + factor.FCustomerId.ToString() + "," + factor.FProductId.ToString() + ","+factor.Quantity.ToString() + ","+factor.TotalPrice.ToString()
         )).FirstOrDefaultAsync();
-            return factorresllt.Id;
+            //return factorresllt.Id;
         }
 
 

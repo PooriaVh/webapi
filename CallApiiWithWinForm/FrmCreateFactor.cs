@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -52,6 +54,7 @@ namespace CallApiiWithWinForm
             }
             dataGridView1.Columns["Quantity"].ReadOnly=false;
             dataGridView1.Columns["select"].ReadOnly = false;
+            dataGridView1.Columns["TotalPrice"].ReadOnly = false;
 
         }
         private async Task<IEnumerable<Customer>> GetHttpCustomerAsync()
@@ -104,30 +107,44 @@ namespace CallApiiWithWinForm
                 throw new Exception($"Exception occurred: {ex.Message}");
             }
         }
-        private async Task<long> PostCreateFactors(List<Factor>factors)
+        private async Task<long> PostCreateFactors(Factor factor)
         {
             try
             {
-                using (var client = new HttpClient())
+                HttpWebRequest webRequest;
+
+                string requestParams = JsonConvert.SerializeObject(factor); //format information you need to pass into that string ('info={ "EmployeeID": [ "1234567", "7654321" ], "Salary": true, "BonusPercentage": 10}');
+
+                webRequest = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:5000/Factor/Create");
+
+                webRequest.Method = "POST";
+                webRequest.ContentType = "application/json";
+
+                byte[] byteArray = Encoding.UTF8.GetBytes(requestParams);
+                webRequest.ContentLength = byteArray.Length;
+                using (Stream requestStream = webRequest.GetRequestStream())
                 {
-
-                    client.BaseAddress = new Uri("http://127.0.0.1:5000/");
-                    var a=JsonConvert.SerializeObject(factors);
-                    var content = new StringContent(a, Encoding.UTF8, "application/json");
-                    var requestUri = "Factor/Create";
-
-                    var responsed  =await client.PostAsync(requestUri,content);
-
-                    //await responsed.Result.Content.ReadAsStringAsync();
-                   // var products = JsonConvert.DeserializeObject<IEnumerable<Products>>(content);
-                    return responsed;
+                    requestStream.Write(byteArray, 0, byteArray.Length);
                 }
 
+                // Get the response.
+                using (WebResponse response =await webRequest.GetResponseAsync())
+                {
+                    using (Stream responseStream = response.GetResponseStream())
+                    {
+                        StreamReader rdr = new StreamReader(responseStream, Encoding.UTF8);
+                        string Json = rdr.ReadToEnd(); // response from server
+
+                    }
+                }
+                return 0;
             }
             catch (Exception ex)
             {
                 throw new Exception($"Exception occurred: {ex.Message}");
             }
+            
+
         }
 
 
@@ -151,7 +168,7 @@ namespace CallApiiWithWinForm
             {
                 if (dataGridView1.Rows[counter].Cells["Quantity"].Value != null)
                 {
-                    dataGridView1.Rows[counter].Cells["TotalPrice"].Value = (decimal.Parse(dataGridView1.Rows[counter].Cells["Quantity"].Value.ToString()) * decimal.Parse(dataGridView1.Rows[counter].Cells["Price"].Value.ToString())).ToString();
+                    dataGridView1.Rows[counter].Cells["TotalPrice"].Value =Convert.ToInt64 (decimal.Parse(dataGridView1.Rows[counter].Cells["Quantity"].Value.ToString()) * decimal.Parse(dataGridView1.Rows[counter].Cells["Price"].Value.ToString())).ToString();
 
                 }
 
@@ -179,7 +196,7 @@ namespace CallApiiWithWinForm
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private async void button1_Click(object sender, EventArgs e)
         {
             int counter=0;
             for (int i = 0; i < dataGridView1.Rows.Count; i++)
@@ -195,7 +212,30 @@ namespace CallApiiWithWinForm
             }
             else
             {
+                for (int i = 0; i < dataGridView1.Rows.Count; i++)
+                {
+                    if (Convert.ToBoolean( dataGridView1.Rows[i].Cells["Select"].Value))
+                    {
+                        Factor f = new Factor()
+                        {
+                            FCustomerId = long.Parse(cmbCustomers.SelectedValue.ToString()),
+                
+                            FProductId = long.Parse(dataGridView1.Rows[i].Cells["Id"].Value.ToString()),
+                            Quantity= int.Parse(dataGridView1.Rows[i].Cells["Quantity"].Value.ToString()),
+                            TotalPrice= Int64.Parse(dataGridView1.Rows[i].Cells["TotalPrice"].Value.ToString())
+                        };
+                        try
+                        {
+                          await  PostCreateFactors(f);
+                        }
+                        catch (Exception)
+                        {
 
+                            throw;
+                        }
+                    }
+                }
+                
             }
         }
 
