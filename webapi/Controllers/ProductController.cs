@@ -93,13 +93,14 @@ namespace webapi.Controllers
         [HttpPost]
      
         [Route("Factor/Create")]
-        public async Task CreateFactor([FromBody]Factor factor)
+        public async Task<long> CreateFactor([FromBody]Factor factor)
         {
-            var factorresllt=await (webapistoreContext.Factor.FromSqlRaw(
-      " exec dbo.CreateFactor @F_customerID = {0},@F_ProductID = {1},@Quantity = {2},@TotalPrice = {3} ,"
-        + factor.FCustomerId.ToString() + "," + factor.FProductId.ToString() + ","+factor.Quantity.ToString() + ","+factor.TotalPrice.ToString()
-        )).FirstOrDefaultAsync();
-            //return factorresllt.Id;
+            long a= await webapistoreContext.Database.ExecuteSqlInterpolatedAsync($" exec CreateFactor  @F_customerID={factor.FCustomerId},@F_ProductID={factor.FProductId},@Quantity={factor.Quantity},@TotalPrice={factor.TotalPrice}");
+            return a;
+            //var sql = " declare @Id decimal (18,0) ;exec CreateFactor @F_customerID,@F_ProductID,@Quantity,@TotalPrice,@Id OUT";
+            //long a = 0;
+            //var result = webapistoreContext.Database.sqlra(sql, factor.FCustomerId, factor.FProductId,factor.Quantity,factor.TotalPrice, a);
+            //return result;
         }
 
 

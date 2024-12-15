@@ -111,33 +111,41 @@ namespace CallApiiWithWinForm
         {
             try
             {
-                HttpWebRequest webRequest;
-
-                string requestParams = JsonConvert.SerializeObject(factor); //format information you need to pass into that string ('info={ "EmployeeID": [ "1234567", "7654321" ], "Salary": true, "BonusPercentage": 10}');
-
-                webRequest = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:5000/Factor/Create");
-
-                webRequest.Method = "POST";
-                webRequest.ContentType = "application/json";
-
-                byte[] byteArray = Encoding.UTF8.GetBytes(requestParams);
-                webRequest.ContentLength = byteArray.Length;
-                using (Stream requestStream = webRequest.GetRequestStream())
+                var content =new StringContent(JsonConvert.SerializeObject(factor),Encoding.UTF8,"application/json");
+                using (var client = new HttpClient())
                 {
-                    requestStream.Write(byteArray, 0, byteArray.Length);
+                    var responce = await client.PostAsync("http://127.0.0.1:5000/Factor/Create", content);
+                    responce.EnsureSuccessStatusCode();
+                    var message=await responce.Content.ReadAsStringAsync();
+                    return long.Parse(message);
                 }
+                //HttpWebRequest webRequest;
 
-                // Get the response.
-                using (WebResponse response =await webRequest.GetResponseAsync())
-                {
-                    using (Stream responseStream = response.GetResponseStream())
-                    {
-                        StreamReader rdr = new StreamReader(responseStream, Encoding.UTF8);
-                        string Json = rdr.ReadToEnd(); // response from server
+                //string requestParams = JsonConvert.SerializeObject(factor); //format information you need to pass into that string ('info={ "EmployeeID": [ "1234567", "7654321" ], "Salary": true, "BonusPercentage": 10}');
 
-                    }
-                }
-                return 0;
+                //webRequest = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:5000/Factor/Create");
+
+                //webRequest.Method = "POST";
+                //webRequest.ContentType = "application/json";
+
+                //byte[] byteArray = Encoding.UTF8.GetBytes(requestParams);
+                //webRequest.ContentLength = byteArray.Length;
+                //using (Stream requestStream = webRequest.GetRequestStream())
+                //{
+                //    requestStream.Write(byteArray, 0, byteArray.Length);
+                //}
+
+                //// Get the response.
+                //using (WebResponse response =await webRequest.GetResponseAsync())
+                //{
+                //    using (Stream responseStream = response.GetResponseStream())
+                //    {
+                //        StreamReader rdr = new StreamReader(responseStream, Encoding.UTF8);
+                //        string Json = rdr.ReadToEnd(); // response from server
+
+                //    }
+                //}
+                //return 0;
             }
             catch (Exception ex)
             {
@@ -212,6 +220,7 @@ namespace CallApiiWithWinForm
             }
             else
             {
+                long result = 0;
                 for (int i = 0; i < dataGridView1.Rows.Count; i++)
                 {
                     if (Convert.ToBoolean( dataGridView1.Rows[i].Cells["Select"].Value))
@@ -226,12 +235,13 @@ namespace CallApiiWithWinForm
                         };
                         try
                         {
-                          await  PostCreateFactors(f);
+                            
+                          result=await  PostCreateFactors(f);
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
 
-                            throw;
+                            MessageBox.Show(ex.Message);
                         }
                     }
                 }
